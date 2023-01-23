@@ -1,0 +1,18 @@
+syntax = "proto3";
+package types;
+
+option go_package = "./explorer";
+
+message ValidatorEpochIncome {
+    uint64 attestation_reward = 1;
+    uint64 attestation_penalty = 2;
+    uint64 proposer_slashing_inclusion_reward = 3;
+    uint64 proposer_attestation_inclusion_reward = 4;
+    uint64 proposer_sync_inclusion_reward = 5;
+    uint64 sync_committee_reward = 6;
+    uint64 sync_committee_penalty = 7;
+    uint64 slashing_reward = 8;
+    uint64 slashing_penalty = 9;
+    bytes tx_fee_reward_wei = 10;
+    uint64 proposals_missed = 11;
+}

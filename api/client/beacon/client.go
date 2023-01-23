@@ -146,7 +146,7 @@ func withSSZEncoding() reqOption {
 // get is a generic, opinionated GET function to reduce boilerplate amongst the getters in this package.
 func (c *Client) get(ctx context.Context, path string, opts ...reqOption) ([]byte, error) {
 	u := c.baseURL.ResolveReference(&url.URL{Path: path})
-	log.Printf("requesting %s", u.String())
+	log.Tracef("requesting %s", u.String())
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err

@@ -9,6 +9,8 @@ import (
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/core/time"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v3/config/params"
+	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/explorer/tracer"
 	"github.com/prysmaticlabs/prysm/v3/math"
 	"go.opencensus.io/trace"
 )
@@ -241,7 +243,10 @@ func ProcessRewardsAndPenaltiesPrecompute(
 		if err != nil {
 			return nil, err
 		}
+		tracer.SetReward(beaconState, types.ValidatorIndex(i), attsRewards[i], tracer.AttestationReward)
+
 		balances[i] = helpers.DecreaseBalanceWithVal(balances[i], attsPenalties[i])
+		tracer.SetPenalty(beaconState, types.ValidatorIndex(i), attsPenalties[i], tracer.AttestationPenalty)
 
 		vals[i].AfterEpochTransitionBalance = balances[i]
 	}

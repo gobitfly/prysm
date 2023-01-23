@@ -13,6 +13,7 @@ import (
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v3/config/params"
 	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/explorer/tracer"
 	mathutil "github.com/prysmaticlabs/prysm/v3/math"
 	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 	"github.com/prysmaticlabs/prysm/v3/time/slots"
@@ -170,9 +171,11 @@ func SlashValidator(
 	); err != nil {
 		return nil, err
 	}
-	if err := helpers.DecreaseBalance(s, slashedIdx, validator.EffectiveBalance/penaltyQuotient); err != nil {
+	err = helpers.DecreaseBalance(s, slashedIdx, validator.EffectiveBalance/penaltyQuotient)
+	if err != nil {
 		return nil, err
 	}
+	tracer.SetPenalty(s, slashedIdx, validator.EffectiveBalance/penaltyQuotient, tracer.SlashingPenalty)
 
 	proposerIdx, err := helpers.BeaconProposerIndex(ctx, s)
 	if err != nil {
@@ -186,10 +189,12 @@ func SlashValidator(
 	if err != nil {
 		return nil, err
 	}
+	tracer.SetReward(s, proposerIdx, proposerReward, tracer.ProposerSlashingInclusionReward)
 	err = helpers.IncreaseBalance(s, whistleBlowerIdx, whistleblowerReward-proposerReward)
 	if err != nil {
 		return nil, err
 	}
+	tracer.SetReward(s, whistleBlowerIdx, whistleblowerReward-proposerReward, tracer.ProposerSlashingInclusionReward)
 	return s, nil
 }
 

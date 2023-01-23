@@ -14,6 +14,7 @@ import (
 	consensusblocks "github.com/prysmaticlabs/prysm/v3/consensus-types/blocks"
 	"github.com/prysmaticlabs/prysm/v3/consensus-types/interfaces"
 	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/explorer/tracer"
 	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 	"github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1/attestation"
 	"go.opencensus.io/trace"
@@ -233,7 +234,11 @@ func RewardProposer(ctx context.Context, beaconState state.BeaconState, proposer
 		return err
 	}
 
-	return helpers.IncreaseBalance(beaconState, i, proposerReward)
+	err = helpers.IncreaseBalance(beaconState, i, proposerReward)
+	if err == nil {
+		tracer.SetReward(beaconState, i, proposerReward, tracer.ProposerAttestationInclusionReward)
+	}
+	return err
 }
 
 // AttestationParticipationFlagIndices retrieves a map of attestation scoring based on Altair's participation flag indices.

@@ -16,6 +16,7 @@ import (
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v3/config/params"
 	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/explorer/tracer"
 	"github.com/prysmaticlabs/prysm/v3/math"
 	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 	"github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1/attestation"
@@ -196,9 +197,11 @@ func ProcessSlashings(state state.BeaconState, slashingMultiplier uint64) (state
 		if val.Slashed && correctEpoch {
 			penaltyNumerator := val.EffectiveBalance / increment * minSlashing
 			penalty := penaltyNumerator / totalBalance * increment
-			if err := helpers.DecreaseBalance(state, types.ValidatorIndex(idx), penalty); err != nil {
+			err := helpers.DecreaseBalance(state, types.ValidatorIndex(idx), penalty)
+			if err != nil {
 				return false, val, err
 			}
+			tracer.SetPenalty(state, types.ValidatorIndex(idx), penalty, tracer.SlashingPenalty)
 			return true, val, nil
 		}
 		return false, val, nil

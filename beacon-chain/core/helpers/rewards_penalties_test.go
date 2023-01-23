@@ -135,7 +135,7 @@ func TestIncreaseBalance_OK(t *testing.T) {
 			Balances: test.b,
 		})
 		require.NoError(t, err)
-		require.NoError(t, IncreaseBalance(state, test.i, test.nb))
+		require.NoError(t, IncreaseBalance(state, test.i, test.nb, "test"))
 		assert.Equal(t, test.eb, state.Balances()[test.i], "Incorrect Validator balance")
 	}
 }
@@ -159,7 +159,7 @@ func TestDecreaseBalance_OK(t *testing.T) {
 			Balances: test.b,
 		})
 		require.NoError(t, err)
-		require.NoError(t, DecreaseBalance(state, test.i, test.nb))
+		require.NoError(t, DecreaseBalance(state, test.i, test.nb, "test"))
 		assert.Equal(t, test.eb, state.Balances()[test.i], "Incorrect Validator balance")
 	}
 }
@@ -271,6 +271,6 @@ func TestIncreaseBadBalance_NotOK(t *testing.T) {
 			Balances: test.b,
 		})
 		require.NoError(t, err)
-		require.ErrorContains(t, "addition overflows", IncreaseBalance(state, test.i, test.nb))
+		require.ErrorContains(t, "addition overflows", IncreaseBalance(state, test.i, test.nb, "test"))
 	}
 }
