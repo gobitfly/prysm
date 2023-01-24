@@ -199,37 +199,40 @@ func GetEpochData(s state.BeaconState, network string, epoch uint64, clClient *b
 	targetIdx := params.BeaconConfig().TimelyTargetFlagIndex
 	pp, err := s.PreviousEpochParticipation()
 	if err != nil {
-		return nil, err
-	}
-	previousEpoch := epoch - 1
-	for i, validator := range s.Validators() {
-		farFutureEpoch := params.BeaconConfig().FarFutureEpoch
-
-		// Pending.
-		if uint64(validator.ActivationEpoch) > epoch {
-			if validator.ActivationEligibilityEpoch < farFutureEpoch {
-				data.NumActivatingValidators++
-			}
+		if err.Error() != "PreviousEpochParticipation is not supported for phase0" {
+			return nil, err
 		}
+	} else {
+		previousEpoch := epoch - 1
+		for i, validator := range s.Validators() {
+			farFutureEpoch := params.BeaconConfig().FarFutureEpoch
 
-		// Exiting / Slashed.
-		if uint64(validator.ActivationEpoch) <= epoch && epoch < uint64(validator.ExitEpoch) {
-			if validator.ExitEpoch < farFutureEpoch {
-				data.NumExitingValidators++
+			// Pending.
+			if uint64(validator.ActivationEpoch) > epoch {
+				if validator.ActivationEligibilityEpoch < farFutureEpoch {
+					data.NumActivatingValidators++
+				}
 			}
-		}
-		active := uint64(validator.ActivationEpoch) <= previousEpoch && previousEpoch < uint64(validator.ExitEpoch)
-		if active && !validator.Slashed {
-			data.PreviousEpochActiveGWei, err = math.Add64(data.PreviousEpochActiveGWei, validator.EffectiveBalance)
-			if err != nil {
-				return nil, err
-			}
-		}
 
-		if ((pp[i] >> targetIdx) & 1) == 1 {
-			data.PreviousEpochVotedGWei, err = math.Add64(data.PreviousEpochVotedGWei, validator.EffectiveBalance)
-			if err != nil {
-				return nil, err
+			// Exiting / Slashed.
+			if uint64(validator.ActivationEpoch) <= epoch && epoch < uint64(validator.ExitEpoch) {
+				if validator.ExitEpoch < farFutureEpoch {
+					data.NumExitingValidators++
+				}
+			}
+			active := uint64(validator.ActivationEpoch) <= previousEpoch && previousEpoch < uint64(validator.ExitEpoch)
+			if active && !validator.Slashed {
+				data.PreviousEpochActiveGWei, err = math.Add64(data.PreviousEpochActiveGWei, validator.EffectiveBalance)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			if ((pp[i] >> targetIdx) & 1) == 1 {
+				data.PreviousEpochVotedGWei, err = math.Add64(data.PreviousEpochVotedGWei, validator.EffectiveBalance)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
