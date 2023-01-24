@@ -4,14 +4,12 @@ import (
 	"flag"
 	"os"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	runtime "github.com/banzaicloud/logrus-runtime-formatter"
 	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
-	"github.com/prysmaticlabs/prysm/v3/beacon-chain/state"
-	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	"github.com/prysmaticlabs/prysm/v3/explorer/stateprocessor"
-	"github.com/prysmaticlabs/prysm/v3/explorer/tracer"
 	"github.com/sirupsen/logrus"
 )
 
@@ -44,37 +42,19 @@ func main() {
 	logrus.Infof("network: %v", *network)
 	logrus.Infof("epoch: %v", *epoch)
 
-	var s state.BeaconState
-	for i := uint64(0); i < 48000; i++ {
-		var d map[types.ValidatorIndex]*tracer.ValidatorEpochData
+	d := &stateprocessor.EpochData{}
+
+	for i := uint64(0); i < 200; i++ {
 		var err error
 
-		s, d, err = stateprocessor.GetEpochData(s, *network, *epoch+i, clClient)
+		d, err = stateprocessor.GetEpochData(d.State, *network, *epoch+i, clClient)
 
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		// logrus.Infof("retrieved %v data items", len(d))
+		spew.Dump(d.Validators[2227])
 
-		// for _, validator := range d {
-		// 	for index, epochData := range validator {
-		// 		for slot, proposed := range epochData.Proposals {
-		// 			if proposed {
-		// 				logrus.Infof("validator %v proposed slot %v", index, slot)
-		// 			} else {
-		// 				logrus.Infof("validator %v missed slot %v", index, slot)
-		// 			}
-		// 		}
-		// 	}
-		// }
-
-		// for _, ed := range d[57] {
-		// 	logrus.Info(ed)
-		// }
-
-		logrus.Info(d[757])
-
-		logrus.Infof("done, state is at slot %v", s.Slot())
+		logrus.Infof("epoch %v processed, state is at slot %v, previous epoch active is %v, previous epoch participated is %v", *epoch+i, d.State.Slot(), d.PreviousEpochActiveGWei, d.PreviousEpochVotedGWei)
 	}
 }
