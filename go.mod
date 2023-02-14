@@ -1,4 +1,4 @@
-module github.com/gobitfly/prysm/v3
+module github.com/prysmaticlabs/prysm/v3
 
 go 1.19
 
