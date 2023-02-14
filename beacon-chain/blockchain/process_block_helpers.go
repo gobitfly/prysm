@@ -6,13 +6,12 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/prysmaticlabs/prysm/v3/beacon-chain/core/helpers"
 	doublylinkedtree "github.com/prysmaticlabs/prysm/v3/beacon-chain/forkchoice/doubly-linked-tree"
 	forkchoicetypes "github.com/prysmaticlabs/prysm/v3/beacon-chain/forkchoice/types"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v3/config/params"
 	"github.com/prysmaticlabs/prysm/v3/consensus-types/interfaces"
-	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	"github.com/prysmaticlabs/prysm/v3/encoding/bytesutil"
 	mathutil "github.com/prysmaticlabs/prysm/v3/math"
 	"github.com/prysmaticlabs/prysm/v3/monitoring/tracing"
@@ -22,7 +21,7 @@ import (
 )
 
 // CurrentSlot returns the current slot based on time.
-func (s *Service) CurrentSlot() types.Slot {
+func (s *Service) CurrentSlot() primitives.Slot {
 	return slots.CurrentSlot(uint64(s.genesisTime.Unix()))
 }
 
@@ -195,7 +194,7 @@ func (s *Service) updateFinalized(ctx context.Context, cp *ethpb.Checkpoint) err
 //	 else:
 //	     # root is older than queried slot, thus a skip slot. Return most recent root prior to slot
 //	     return root
-func (s *Service) ancestor(ctx context.Context, root []byte, slot types.Slot) ([]byte, error) {
+func (s *Service) ancestor(ctx context.Context, root []byte, slot primitives.Slot) ([]byte, error) {
 	ctx, span := trace.StartSpan(ctx, "blockChain.ancestor")
 	defer span.End()
 
@@ -216,7 +215,7 @@ func (s *Service) ancestor(ctx context.Context, root []byte, slot types.Slot) ([
 }
 
 // This retrieves an ancestor root using fork choice store. The look up is looping through the a flat array structure.
-func (s *Service) ancestorByForkChoiceStore(ctx context.Context, r [32]byte, slot types.Slot) ([]byte, error) {
+func (s *Service) ancestorByForkChoiceStore(ctx context.Context, r [32]byte, slot primitives.Slot) ([]byte, error) {
 	ctx, span := trace.StartSpan(ctx, "blockChain.ancestorByForkChoiceStore")
 	defer span.End()
 
@@ -228,7 +227,7 @@ func (s *Service) ancestorByForkChoiceStore(ctx context.Context, r [32]byte, slo
 }
 
 // This retrieves an ancestor root using DB. The look up is recursively looking up DB. Slower than `ancestorByForkChoiceStore`.
-func (s *Service) ancestorByDB(ctx context.Context, r [32]byte, slot types.Slot) ([]byte, error) {
+func (s *Service) ancestorByDB(ctx context.Context, r [32]byte, slot primitives.Slot) ([]byte, error) {
 	ctx, span := trace.StartSpan(ctx, "blockChain.ancestorByDB")
 	defer span.End()
 
@@ -314,23 +313,6 @@ func (s *Service) insertFinalizedDeposits(ctx context.Context, fRoot [32]byte) e
 	if err = s.cfg.DepositCache.PruneProofs(ctx, int64(eth1DepositIndex)); err != nil {
 		return errors.Wrap(err, "could not prune deposit proofs")
 	}
-	return nil
-}
-
-// The deletes input attestations from the attestation pool, so proposers don't include them in a block for the future.
-func (s *Service) deletePoolAtts(atts []*ethpb.Attestation) error {
-	for _, att := range atts {
-		if helpers.IsAggregated(att) {
-			if err := s.cfg.AttPool.DeleteAggregatedAttestation(att); err != nil {
-				return err
-			}
-		} else {
-			if err := s.cfg.AttPool.DeleteUnaggregatedAttestation(att); err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 

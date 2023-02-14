@@ -1,6 +1,3 @@
-//go:build use_beacon_api
-// +build use_beacon_api
-
 package beacon_api
 
 import (
@@ -12,7 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	rpcmiddleware "github.com/prysmaticlabs/prysm/v3/beacon-chain/rpc/apimiddleware"
-	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 	"github.com/prysmaticlabs/prysm/v3/testing/assert"
 	"github.com/prysmaticlabs/prysm/v3/testing/require"
@@ -36,18 +33,20 @@ func TestIndex_Nominal(t *testing.T) {
 	defer ctrl.Finish()
 
 	pubKey, url := getPubKeyAndURL(t)
+	ctx := context.Background()
 
 	stateValidatorsResponseJson := rpcmiddleware.StateValidatorsResponseJson{}
 	jsonRestHandler := mock.NewMockjsonRestHandler(ctrl)
 
 	jsonRestHandler.EXPECT().GetRestJsonResponse(
+		ctx,
 		url,
 		&stateValidatorsResponseJson,
 	).Return(
 		nil,
 		nil,
 	).SetArg(
-		1,
+		2,
 		rpcmiddleware.StateValidatorsResponseJson{
 			Data: []*rpcmiddleware.ValidatorContainerJson{
 				{
@@ -61,17 +60,21 @@ func TestIndex_Nominal(t *testing.T) {
 		},
 	).Times(1)
 
-	validatorClient := beaconApiValidatorClient{jsonRestHandler: jsonRestHandler}
+	validatorClient := beaconApiValidatorClient{
+		stateValidatorsProvider: beaconApiStateValidatorsProvider{
+			jsonRestHandler: jsonRestHandler,
+		},
+	}
 
 	validatorIndex, err := validatorClient.ValidatorIndex(
-		context.Background(),
+		ctx,
 		&ethpb.ValidatorIndexRequest{
 			PublicKey: pubKey,
 		},
 	)
 
 	require.NoError(t, err)
-	assert.Equal(t, types.ValidatorIndex(55293), validatorIndex.Index)
+	assert.Equal(t, primitives.ValidatorIndex(55293), validatorIndex.Index)
 }
 
 func TestIndex_UnexistingValidator(t *testing.T) {
@@ -79,27 +82,33 @@ func TestIndex_UnexistingValidator(t *testing.T) {
 	defer ctrl.Finish()
 
 	pubKey, url := getPubKeyAndURL(t)
+	ctx := context.Background()
 
 	stateValidatorsResponseJson := rpcmiddleware.StateValidatorsResponseJson{}
 	jsonRestHandler := mock.NewMockjsonRestHandler(ctrl)
 
 	jsonRestHandler.EXPECT().GetRestJsonResponse(
+		ctx,
 		url,
 		&stateValidatorsResponseJson,
 	).Return(
 		nil,
 		nil,
 	).SetArg(
-		1,
+		2,
 		rpcmiddleware.StateValidatorsResponseJson{
 			Data: []*rpcmiddleware.ValidatorContainerJson{},
 		},
 	).Times(1)
 
-	validatorClient := beaconApiValidatorClient{jsonRestHandler: jsonRestHandler}
+	validatorClient := beaconApiValidatorClient{
+		stateValidatorsProvider: beaconApiStateValidatorsProvider{
+			jsonRestHandler: jsonRestHandler,
+		},
+	}
 
 	_, err := validatorClient.ValidatorIndex(
-		context.Background(),
+		ctx,
 		&ethpb.ValidatorIndexRequest{
 			PublicKey: pubKey,
 		},
@@ -114,18 +123,20 @@ func TestIndex_BadIndexError(t *testing.T) {
 	defer ctrl.Finish()
 
 	pubKey, url := getPubKeyAndURL(t)
+	ctx := context.Background()
 
 	stateValidatorsResponseJson := rpcmiddleware.StateValidatorsResponseJson{}
 	jsonRestHandler := mock.NewMockjsonRestHandler(ctrl)
 
 	jsonRestHandler.EXPECT().GetRestJsonResponse(
+		ctx,
 		url,
 		&stateValidatorsResponseJson,
 	).Return(
 		nil,
 		nil,
 	).SetArg(
-		1,
+		2,
 		rpcmiddleware.StateValidatorsResponseJson{
 			Data: []*rpcmiddleware.ValidatorContainerJson{
 				{
@@ -139,10 +150,14 @@ func TestIndex_BadIndexError(t *testing.T) {
 		},
 	).Times(1)
 
-	validatorClient := beaconApiValidatorClient{jsonRestHandler: jsonRestHandler}
+	validatorClient := beaconApiValidatorClient{
+		stateValidatorsProvider: beaconApiStateValidatorsProvider{
+			jsonRestHandler: jsonRestHandler,
+		},
+	}
 
 	_, err := validatorClient.ValidatorIndex(
-		context.Background(),
+		ctx,
 		&ethpb.ValidatorIndexRequest{
 			PublicKey: pubKey,
 		},
@@ -156,11 +171,13 @@ func TestIndex_JsonResponseError(t *testing.T) {
 	defer ctrl.Finish()
 
 	pubKey, url := getPubKeyAndURL(t)
+	ctx := context.Background()
 
 	stateValidatorsResponseJson := rpcmiddleware.StateValidatorsResponseJson{}
 	jsonRestHandler := mock.NewMockjsonRestHandler(ctrl)
 
 	jsonRestHandler.EXPECT().GetRestJsonResponse(
+		ctx,
 		url,
 		&stateValidatorsResponseJson,
 	).Return(
@@ -168,14 +185,18 @@ func TestIndex_JsonResponseError(t *testing.T) {
 		errors.New("some specific json error"),
 	).Times(1)
 
-	validatorClient := beaconApiValidatorClient{jsonRestHandler: jsonRestHandler}
+	validatorClient := beaconApiValidatorClient{
+		stateValidatorsProvider: beaconApiStateValidatorsProvider{
+			jsonRestHandler: jsonRestHandler,
+		},
+	}
 
 	_, err := validatorClient.ValidatorIndex(
-		context.Background(),
+		ctx,
 		&ethpb.ValidatorIndexRequest{
 			PublicKey: pubKey,
 		},
 	)
 
-	assert.ErrorContains(t, "failed to get validator state", err)
+	assert.ErrorContains(t, "failed to get state validator", err)
 }

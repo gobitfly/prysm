@@ -128,6 +128,14 @@ var (
 		Name:  "enable-full-ssz-data-logging",
 		Usage: "Enables displaying logs for full ssz data on rejected gossip messages",
 	}
+	EnableBeaconRESTApi = &cli.BoolFlag{
+		Name:  "enable-beacon-rest-api",
+		Usage: "Experimental enable of the beacon REST API when querying a beacon node",
+	}
+	enableVerboseSigVerification = &cli.BoolFlag{
+		Name:  "enable-verbose-sig-verification",
+		Usage: "Enables identifying invalid signatures if batch verification fails when processing block",
+	}
 )
 
 // devModeFlags holds list of flags that are set when development mode is on.
@@ -145,6 +153,7 @@ var ValidatorFlags = append(deprecatedFlags, []cli.Flag{
 	attestTimely,
 	enableSlashingProtectionPruning,
 	enableDoppelGangerProtection,
+	EnableBeaconRESTApi,
 }...)
 
 // E2EValidatorFlags contains a list of the validator feature flags to be tested in E2E.
@@ -165,6 +174,7 @@ var BeaconChainFlags = append(deprecatedBeaconFlags, append(deprecatedFlags, []c
 	disableBroadcastSlashingFlag,
 	enableSlasherFlag,
 	enableHistoricalSpaceRepresentation,
+	disableStakinContractCheck,
 	disablePullTips,
 	disableVecHTR,
 	disableForkChoiceDoublyLinkedTree,
@@ -173,6 +183,7 @@ var BeaconChainFlags = append(deprecatedBeaconFlags, append(deprecatedFlags, []c
 	enableStartupOptimistic,
 	disableDefensivePull,
 	enableFullSSZDataLogging,
+	enableVerboseSigVerification,
 }...)...)
 
 // E2EBeaconChainFlags contains a list of the beacon chain feature flags to be tested in E2E.

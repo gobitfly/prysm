@@ -1,23 +1,21 @@
-//go:build use_beacon_api
-// +build use_beacon_api
-
 package beacon_api
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/pkg/errors"
-	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 )
 
-func (c beaconApiValidatorClient) validatorIndex(in *ethpb.ValidatorIndexRequest) (*ethpb.ValidatorIndexResponse, error) {
+func (c beaconApiValidatorClient) validatorIndex(ctx context.Context, in *ethpb.ValidatorIndexRequest) (*ethpb.ValidatorIndexResponse, error) {
 	stringPubKey := hexutil.Encode(in.PublicKey)
 
-	stateValidator, err := c.getStateValidators([]string{stringPubKey})
+	stateValidator, err := c.stateValidatorsProvider.GetStateValidators(ctx, []string{stringPubKey}, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get validator state")
+		return nil, errors.Wrap(err, "failed to get state validator")
 	}
 
 	if len(stateValidator.Data) == 0 {
@@ -31,5 +29,5 @@ func (c beaconApiValidatorClient) validatorIndex(in *ethpb.ValidatorIndexRequest
 		return nil, errors.Wrap(err, "failed to parse validator index")
 	}
 
-	return &ethpb.ValidatorIndexResponse{Index: types.ValidatorIndex(index)}, nil
+	return &ethpb.ValidatorIndexResponse{Index: primitives.ValidatorIndex(index)}, nil
 }

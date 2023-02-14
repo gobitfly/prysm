@@ -7,7 +7,7 @@ import (
 	ssz "github.com/prysmaticlabs/fastssz"
 	field_params "github.com/prysmaticlabs/prysm/v3/config/fieldparams"
 	"github.com/prysmaticlabs/prysm/v3/consensus-types/interfaces"
-	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	enginev1 "github.com/prysmaticlabs/prysm/v3/proto/engine/v1"
 	eth "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 	validatorpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1/validator-client"
@@ -454,12 +454,12 @@ func (b *SignedBeaconBlock) UnmarshalSSZ(buf []byte) error {
 }
 
 // Slot returns the respective slot of the block.
-func (b *BeaconBlock) Slot() types.Slot {
+func (b *BeaconBlock) Slot() primitives.Slot {
 	return b.slot
 }
 
 // ProposerIndex returns the proposer index of the beacon block.
-func (b *BeaconBlock) ProposerIndex() types.ValidatorIndex {
+func (b *BeaconBlock) ProposerIndex() primitives.ValidatorIndex {
 	return b.proposerIndex
 }
 
@@ -726,6 +726,41 @@ func (b *BeaconBlock) AsSignRequestObject() (validatorpb.SignRequestObject, erro
 			return &validatorpb.SignRequest_BlindedBlockCapella{BlindedBlockCapella: pb.(*eth.BlindedBeaconBlockCapella)}, nil
 		}
 		return &validatorpb.SignRequest_BlockCapella{BlockCapella: pb.(*eth.BeaconBlockCapella)}, nil
+	default:
+		return nil, errIncorrectBlockVersion
+	}
+}
+
+func (b *BeaconBlock) Copy() (interfaces.BeaconBlock, error) {
+	if b == nil {
+		return nil, nil
+	}
+
+	pb, err := b.Proto()
+	if err != nil {
+		return nil, err
+	}
+	switch b.version {
+	case version.Phase0:
+		cp := eth.CopyBeaconBlock(pb.(*eth.BeaconBlock))
+		return initBlockFromProtoPhase0(cp)
+	case version.Altair:
+		cp := eth.CopyBeaconBlockAltair(pb.(*eth.BeaconBlockAltair))
+		return initBlockFromProtoAltair(cp)
+	case version.Bellatrix:
+		if b.IsBlinded() {
+			cp := eth.CopyBlindedBeaconBlockBellatrix(pb.(*eth.BlindedBeaconBlockBellatrix))
+			return initBlindedBlockFromProtoBellatrix(cp)
+		}
+		cp := eth.CopyBeaconBlockBellatrix(pb.(*eth.BeaconBlockBellatrix))
+		return initBlockFromProtoBellatrix(cp)
+	case version.Capella:
+		if b.IsBlinded() {
+			cp := eth.CopyBlindedBeaconBlockCapella(pb.(*eth.BlindedBeaconBlockCapella))
+			return initBlindedBlockFromProtoCapella(cp)
+		}
+		cp := eth.CopyBeaconBlockCapella(pb.(*eth.BeaconBlockCapella))
+		return initBlockFromProtoCapella(cp)
 	default:
 		return nil, errIncorrectBlockVersion
 	}

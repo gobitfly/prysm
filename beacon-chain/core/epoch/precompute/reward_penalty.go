@@ -6,7 +6,7 @@ import (
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/core/time"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v3/config/params"
-	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	"github.com/prysmaticlabs/prysm/v3/explorer/tracer"
 	"github.com/prysmaticlabs/prysm/v3/math"
 )
@@ -52,17 +52,17 @@ func ProcessRewardsAndPenaltiesPrecompute(
 		if err != nil {
 			return nil, err
 		}
-		tracer.SetReward(state, types.ValidatorIndex(i), attsRewards[i], tracer.AttestationReward)
+		tracer.SetReward(state, primitives.ValidatorIndex(i), attsRewards[i], tracer.AttestationReward)
 
 		// attester and proposer rewards and penalties.
 		validatorBals[i], err = helpers.IncreaseBalanceWithVal(validatorBals[i], proposerRewards[i])
 		if err != nil {
 			return nil, err
 		}
-		tracer.SetReward(state, types.ValidatorIndex(i), proposerRewards[i], tracer.ProposerAttestationInclusionReward)
+		tracer.SetReward(state, primitives.ValidatorIndex(i), proposerRewards[i], tracer.ProposerAttestationInclusionReward)
 
 		validatorBals[i] = helpers.DecreaseBalanceWithVal(validatorBals[i], attsPenalties[i])
-		tracer.SetPenalty(state, types.ValidatorIndex(i), attsPenalties[i], tracer.AttestationPenalty)
+		tracer.SetPenalty(state, primitives.ValidatorIndex(i), attsPenalties[i], tracer.AttestationPenalty)
 
 		vp[i].AfterEpochTransitionBalance = validatorBals[i]
 	}
@@ -90,7 +90,7 @@ func AttestationsDelta(state state.ReadOnlyBeaconState, pBal *Balance, vp []*Val
 	return rewards, penalties, nil
 }
 
-func attestationDelta(pBal *Balance, sqrtActiveCurrentEpoch uint64, v *Validator, prevEpoch, finalizedEpoch types.Epoch) (uint64, uint64) {
+func attestationDelta(pBal *Balance, sqrtActiveCurrentEpoch uint64, v *Validator, prevEpoch, finalizedEpoch primitives.Epoch) (uint64, uint64) {
 	if !EligibleForRewards(v) || pBal.ActiveCurrentEpoch == 0 {
 		return 0, 0
 	}

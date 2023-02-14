@@ -124,28 +124,28 @@ load(
 
 container_pull(
     name = "cc_image_base",
-    digest = "sha256:2c4bb6b7236db0a55ec54ba8845e4031f5db2be957ac61867872bf42e56c4deb",
+    digest = "sha256:41036fc7ed8df0f6addc18484cef0c94a85867508967789f947e11ffd5ff0cc8",
     registry = "gcr.io",
     repository = "distroless/cc",
 )
 
 container_pull(
     name = "cc_debug_image_base",
-    digest = "sha256:3680c61e81f68fc00bfb5e1ec65e8e678aaafa7c5f056bc2681c29527ebbb30c",
+    digest = "sha256:6865ad48467c89c3c3524d4c426f52ad12d9ab7dec31fad31fae69da40eb6445",
     registry = "gcr.io",
     repository = "distroless/cc",
 )
 
 container_pull(
     name = "go_image_base",
-    digest = "sha256:ba7a315f86771332e76fa9c3d423ecfdbb8265879c6f1c264d6fff7d4fa460a4",
+    digest = "sha256:b9b124f955961599e72630654107a0cf04e08e6fa777fa250b8f840728abd770",
     registry = "gcr.io",
     repository = "distroless/base",
 )
 
 container_pull(
     name = "go_debug_image_base",
-    digest = "sha256:efd8711717d9e9b5d0dbb20ea10876dab0609c923bc05321b912f9239090ca80",
+    digest = "sha256:65668d2b78d25df3d8ccf5a778d017fcaba513b52078c700083eaeef212b9979",
     registry = "gcr.io",
     repository = "distroless/base",
 )
@@ -188,7 +188,9 @@ filegroup(
     url = "https://github.com/eth-clients/slashing-protection-interchange-tests/archive/b8413ca42dc92308019d0d4db52c87e9e125c4e9.tar.gz",
 )
 
-consensus_spec_version = "v1.3.0-alpha.1"
+consensus_spec_version = "v1.3.0-rc.2"
+
+consensus_spec_test_version = "v1.3.0-rc.2-hotfix"
 
 bls_test_version = "v0.1.1"
 
@@ -204,8 +206,8 @@ filegroup(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "b5a65eb5ecef1c4fca82ff29739936fee019e8a529ef392ea5e46aa39f40a0b2",
-    url = "https://github.com/ethereum/consensus-spec-tests/releases/download/%s/general.tar.gz" % consensus_spec_version,
+    sha256 = "5c90f42ff30857def5ae0952904c5cad6dbc16310a86d3a0914f37b557920779",
+    url = "https://github.com/ethereum/consensus-spec-tests/releases/download/%s/general.tar.gz" % consensus_spec_test_version,
 )
 
 http_archive(
@@ -220,8 +222,8 @@ filegroup(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "b381bb0184e69cb17d05fbbe75f48c6aec7726957d073e3a65c26671d5d27d37",
-    url = "https://github.com/ethereum/consensus-spec-tests/releases/download/%s/minimal.tar.gz" % consensus_spec_version,
+    sha256 = "8fbec5f1fa30fb1194b42230bf75f05690a72cf3c56af5b5ac8aafb94c60fc19",
+    url = "https://github.com/ethereum/consensus-spec-tests/releases/download/%s/minimal.tar.gz" % consensus_spec_test_version,
 )
 
 http_archive(
@@ -236,8 +238,8 @@ filegroup(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "9466f2a5a2dea039a2deb953f0b5dce5399400028bf3f218ffef03f8ef9c446c",
-    url = "https://github.com/ethereum/consensus-spec-tests/releases/download/%s/mainnet.tar.gz" % consensus_spec_version,
+    sha256 = "cb22875dbb67b12f577d12a5aa8074de4c8bd31d74fff45cc110be515c1df847",
+    url = "https://github.com/ethereum/consensus-spec-tests/releases/download/%s/mainnet.tar.gz" % consensus_spec_test_version,
 )
 
 http_archive(
@@ -251,7 +253,7 @@ filegroup(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "3cc3141651a320a1f5767d15826e85aaa96eb4459d9e1a1d3f5a0cdbc79b8f56",
+    sha256 = "c728947ccf8b628691c76cc92f2f59c02f1c7882a463f26365d32c098bb946b8",
     strip_prefix = "consensus-specs-" + consensus_spec_version[1:],
     url = "https://github.com/ethereum/consensus-specs/archive/refs/tags/%s.tar.gz" % consensus_spec_version,
 )
