@@ -51,6 +51,11 @@ func GetEpochData(s state.BeaconState, network string, epoch uint64, clClient *b
 		params.SetActive(params.SepoliaConfig().Copy())
 	} else if network == "prater" {
 		params.SetActive(params.PraterConfig().Copy())
+	} else if strings.HasSuffix(network, ".yml") {
+		err := params.LoadChainConfigFile(network, nil)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		params.SetActive(params.MainnetConfig().Copy())
 	}
