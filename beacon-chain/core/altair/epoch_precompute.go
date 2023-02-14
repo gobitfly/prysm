@@ -9,7 +9,7 @@ import (
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/core/time"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v3/config/params"
-	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	"github.com/prysmaticlabs/prysm/v3/explorer/tracer"
 	"github.com/prysmaticlabs/prysm/v3/math"
 	"go.opencensus.io/trace"
@@ -243,10 +243,8 @@ func ProcessRewardsAndPenaltiesPrecompute(
 		if err != nil {
 			return nil, err
 		}
-		tracer.SetReward(beaconState, types.ValidatorIndex(i), attsRewards[i], tracer.AttestationReward)
 
 		balances[i] = helpers.DecreaseBalanceWithVal(balances[i], attsPenalties[i])
-		tracer.SetPenalty(beaconState, types.ValidatorIndex(i), attsPenalties[i], tracer.AttestationPenalty)
 
 		vals[i].AfterEpochTransitionBalance = balances[i]
 	}
@@ -282,7 +280,7 @@ func AttestationsDelta(beaconState state.BeaconState, bal *precompute.Balance, v
 	inactivityDenominator := bias * inactivityPenaltyQuotient
 
 	for i, v := range vals {
-		rewards[i], penalties[i], err = attestationDelta(bal, v, baseRewardMultiplier, inactivityDenominator, leak)
+		rewards[i], penalties[i], err = attestationDelta(bal, v, baseRewardMultiplier, inactivityDenominator, leak, i)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -295,7 +293,8 @@ func attestationDelta(
 	bal *precompute.Balance,
 	val *precompute.Validator,
 	baseRewardMultiplier, inactivityDenominator uint64,
-	inactivityLeak bool) (reward, penalty uint64, err error) {
+	inactivityLeak bool,
+	validatorIndex int) (reward, penalty uint64, err error) {
 	eligible := val.IsActivePrevEpoch || (val.IsSlashed && !val.IsWithdrawableCurrentEpoch)
 	// Per spec `ActiveCurrentEpoch` can't be 0 to process attestation delta.
 	if !eligible || bal.ActiveCurrentEpoch == 0 {
@@ -318,9 +317,11 @@ func attestationDelta(
 		if !inactivityLeak {
 			n := baseReward * srcWeight * (bal.PrevEpochAttested / increment)
 			reward += n / (activeIncrement * weightDenominator)
+			tracer.SetReward(primitives.ValidatorIndex(validatorIndex), n/(activeIncrement*weightDenominator), tracer.AttestationSourceReward)
 		}
 	} else {
 		penalty += baseReward * srcWeight / weightDenominator
+		tracer.SetPenalty(primitives.ValidatorIndex(validatorIndex), baseReward*srcWeight/weightDenominator, tracer.AttestationSourcePenalty)
 	}
 
 	// Process target reward / penalty
@@ -328,9 +329,11 @@ func attestationDelta(
 		if !inactivityLeak {
 			n := baseReward * tgtWeight * (bal.PrevEpochTargetAttested / increment)
 			reward += n / (activeIncrement * weightDenominator)
+			tracer.SetReward(primitives.ValidatorIndex(validatorIndex), n/(activeIncrement*weightDenominator), tracer.AttestationTargetReward)
 		}
 	} else {
 		penalty += baseReward * tgtWeight / weightDenominator
+		tracer.SetPenalty(primitives.ValidatorIndex(validatorIndex), baseReward*tgtWeight/weightDenominator, tracer.AttestationTargetPenalty)
 	}
 
 	// Process head reward / penalty
@@ -338,6 +341,7 @@ func attestationDelta(
 		if !inactivityLeak {
 			n := baseReward * headWeight * (bal.PrevEpochHeadAttested / increment)
 			reward += n / (activeIncrement * weightDenominator)
+			tracer.SetReward(primitives.ValidatorIndex(validatorIndex), n/(activeIncrement*weightDenominator), tracer.AttestationHeadReward)
 		}
 	}
 
@@ -349,6 +353,7 @@ func attestationDelta(
 			return 0, 0, err
 		}
 		penalty += n / inactivityDenominator
+		tracer.SetPenalty(primitives.ValidatorIndex(validatorIndex), n/inactivityDenominator, tracer.FinalityDelayPenalty)
 	}
 
 	return reward, penalty, nil

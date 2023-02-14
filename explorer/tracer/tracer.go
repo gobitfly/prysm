@@ -9,38 +9,62 @@ import (
 )
 
 type RewardType uint64
+type PenaltyType uint64
 
 const (
-	AttestationReward RewardType = iota
-	AttestationPenalty
-	FinalityDelayPenalty
+	AttestationSourceReward RewardType = iota
+	AttestationTargetReward
+	AttestationHeadReward
+
 	ProposerSlashingInclusionReward
 	ProposerAttestationInclusionReward
 	ProposerSyncInclusionReward
 	SyncCommitteeReward
-	SyncCommitteePenalty
 	SlashingReward
+)
+
+const (
+	AttestationHeadPenalty PenaltyType = iota
+	AttestationSourcePenalty
+	AttestationTargetPenalty
+	FinalityDelayPenalty
+	SyncCommitteePenalty
 	SlashingPenalty
 )
 
 func (rt RewardType) String() string {
 	switch rt {
-	case AttestationReward:
-		return "AttestationReward"
-	case AttestationPenalty:
-		return "AttestationPenalty"
-	case FinalityDelayPenalty:
-		return "FinalityDelayPenalty"
+	case AttestationSourceReward:
+		return "AttestationSourceReward"
+	case AttestationTargetReward:
+		return "AttestationTargetReward"
+	case AttestationHeadReward:
+		return "AttestationHeadReward"
 	case ProposerSlashingInclusionReward:
 		return "ProposerSlashingInclusionReward"
 	case ProposerSyncInclusionReward:
 		return "ProposerSyncInclusionReward"
 	case SyncCommitteeReward:
 		return "SyncCommitteeReward"
-	case SyncCommitteePenalty:
-		return "SyncCommitteePenalty"
 	case SlashingReward:
 		return "SlashingReward"
+	}
+
+	return ""
+}
+
+func (rt PenaltyType) String() string {
+	switch rt {
+	case AttestationSourcePenalty:
+		return "AttestationSourcePenalty"
+	case AttestationTargetPenalty:
+		return "AttestationTargetPenalty"
+	case AttestationHeadPenalty:
+		return "AttestationHeadPenalty"
+	case FinalityDelayPenalty:
+		return "FinalityDelayPenalty"
+	case SyncCommitteePenalty:
+		return "SyncCommitteePenalty"
 	case SlashingPenalty:
 		return "SlashingPenalty"
 	}
@@ -71,7 +95,7 @@ func GetData() map[types.ValidatorIndex]*ValidatorEpochData {
 	return dRet
 }
 
-func SetReward(beaconState state.BeaconState, validator types.ValidatorIndex, reward uint64, rewardType RewardType) {
+func SetReward(validator types.ValidatorIndex, reward uint64, rewardType RewardType) {
 	if reward == 0 {
 		return
 	}
@@ -82,8 +106,12 @@ func SetReward(beaconState state.BeaconState, validator types.ValidatorIndex, re
 	// 	logrus.Fatal(beaconState.Slot(), rewardType)
 	// }
 	switch rewardType {
-	case AttestationReward:
-		data[validator].IncomeDetails.AttestationReward += reward
+	case AttestationSourceReward:
+		data[validator].IncomeDetails.AttestationSourceReward += reward
+	case AttestationTargetReward:
+		data[validator].IncomeDetails.AttestationTargetReward += reward
+	case AttestationHeadReward:
+		data[validator].IncomeDetails.AttestationHeadReward += reward
 	case ProposerAttestationInclusionReward:
 		data[validator].IncomeDetails.ProposerAttestationInclusionReward += reward
 	case ProposerSyncInclusionReward:
@@ -109,7 +137,7 @@ func SetReward(beaconState state.BeaconState, validator types.ValidatorIndex, re
 	// }
 }
 
-func SetPenalty(beaconState state.BeaconState, validator types.ValidatorIndex, reward uint64, rewardType RewardType) {
+func SetPenalty(validator types.ValidatorIndex, reward uint64, rewardType PenaltyType) {
 	if reward == 0 {
 		return
 	}
@@ -117,8 +145,14 @@ func SetPenalty(beaconState state.BeaconState, validator types.ValidatorIndex, r
 	addToMap(validator)
 
 	switch rewardType {
-	case AttestationPenalty:
-		data[validator].IncomeDetails.AttestationPenalty += reward
+	case AttestationSourcePenalty:
+		data[validator].IncomeDetails.AttestationSourcePenalty += reward
+	case AttestationTargetPenalty:
+		data[validator].IncomeDetails.AttestationTargetPenalty += reward
+	case AttestationHeadPenalty:
+		data[validator].IncomeDetails.AttestationHeadPenalty += reward
+	case FinalityDelayPenalty:
+		data[validator].IncomeDetails.FinalityDelayPenalty += reward
 	case SlashingPenalty:
 		data[validator].IncomeDetails.SlashingPenalty += reward
 	case SyncCommitteePenalty:
@@ -207,4 +241,23 @@ func addToMap(validator types.ValidatorIndex) {
 			Attestations:  make(map[uint64]int64),
 		}
 	}
+}
+
+func (income *ValidatorEpochIncome) TotalClRewards() int64 {
+	rewards := income.AttestationSourceReward +
+		income.AttestationTargetReward +
+		income.AttestationHeadReward +
+		income.ProposerSlashingInclusionReward +
+		income.ProposerAttestationInclusionReward +
+		income.ProposerSyncInclusionReward +
+		income.SyncCommitteeReward +
+		income.SlashingReward
+
+	penalties := income.AttestationSourcePenalty +
+		income.AttestationTargetPenalty +
+		income.AttestationHeadPenalty +
+		income.FinalityDelayPenalty +
+		income.SyncCommitteePenalty +
+		income.SlashingPenalty
+	return int64(rewards) - int64(penalties)
 }

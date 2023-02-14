@@ -175,7 +175,7 @@ func SlashValidator(
 	if err != nil {
 		return nil, err
 	}
-	tracer.SetPenalty(s, slashedIdx, validator.EffectiveBalance/penaltyQuotient, tracer.SlashingPenalty)
+	tracer.SetPenalty(slashedIdx, validator.EffectiveBalance/penaltyQuotient, tracer.SlashingPenalty)
 
 	proposerIdx, err := helpers.BeaconProposerIndex(ctx, s)
 	if err != nil {
@@ -189,12 +189,12 @@ func SlashValidator(
 	if err != nil {
 		return nil, err
 	}
-	tracer.SetReward(s, proposerIdx, proposerReward, tracer.ProposerSlashingInclusionReward)
+	tracer.SetReward(proposerIdx, proposerReward, tracer.ProposerSlashingInclusionReward)
 	err = helpers.IncreaseBalance(s, whistleBlowerIdx, whistleblowerReward-proposerReward)
 	if err != nil {
 		return nil, err
 	}
-	tracer.SetReward(s, whistleBlowerIdx, whistleblowerReward-proposerReward, tracer.ProposerSlashingInclusionReward)
+	tracer.SetReward(whistleBlowerIdx, whistleblowerReward-proposerReward, tracer.ProposerSlashingInclusionReward)
 	return s, nil
 }
 

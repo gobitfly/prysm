@@ -203,7 +203,7 @@ func ProcessSlashings(state state.BeaconState, slashingMultiplier uint64) (state
 			if err := helpers.DecreaseBalance(state, primitives.ValidatorIndex(idx), penalty); err != nil {
 				return false, val, err
 			}
-			tracer.SetPenalty(state, primitives.ValidatorIndex(idx), penalty, tracer.SlashingPenalty)
+			tracer.SetPenalty(primitives.ValidatorIndex(idx), penalty, tracer.SlashingPenalty)
 			return true, val, nil
 		}
 		return false, val, nil

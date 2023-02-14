@@ -236,7 +236,7 @@ func RewardProposer(ctx context.Context, beaconState state.BeaconState, proposer
 
 	err = helpers.IncreaseBalance(beaconState, i, proposerReward)
 	if err == nil {
-		tracer.SetReward(beaconState, i, proposerReward, tracer.ProposerAttestationInclusionReward)
+		tracer.SetReward(i, proposerReward, tracer.ProposerAttestationInclusionReward)
 	}
 	return err
 }

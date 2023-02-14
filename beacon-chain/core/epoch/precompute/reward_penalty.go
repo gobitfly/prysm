@@ -52,17 +52,15 @@ func ProcessRewardsAndPenaltiesPrecompute(
 		if err != nil {
 			return nil, err
 		}
-		tracer.SetReward(state, primitives.ValidatorIndex(i), attsRewards[i], tracer.AttestationReward)
 
 		// attester and proposer rewards and penalties.
 		validatorBals[i], err = helpers.IncreaseBalanceWithVal(validatorBals[i], proposerRewards[i])
 		if err != nil {
 			return nil, err
 		}
-		tracer.SetReward(state, primitives.ValidatorIndex(i), proposerRewards[i], tracer.ProposerAttestationInclusionReward)
+		tracer.SetReward(primitives.ValidatorIndex(i), proposerRewards[i], tracer.ProposerAttestationInclusionReward)
 
 		validatorBals[i] = helpers.DecreaseBalanceWithVal(validatorBals[i], attsPenalties[i])
-		tracer.SetPenalty(state, primitives.ValidatorIndex(i), attsPenalties[i], tracer.AttestationPenalty)
 
 		vp[i].AfterEpochTransitionBalance = validatorBals[i]
 	}
@@ -85,12 +83,12 @@ func AttestationsDelta(state state.ReadOnlyBeaconState, pBal *Balance, vp []*Val
 
 	sqrtActiveCurrentEpoch := math.IntegerSquareRoot(pBal.ActiveCurrentEpoch)
 	for i, v := range vp {
-		rewards[i], penalties[i] = attestationDelta(pBal, sqrtActiveCurrentEpoch, v, prevEpoch, finalizedEpoch)
+		rewards[i], penalties[i] = attestationDelta(pBal, sqrtActiveCurrentEpoch, v, prevEpoch, finalizedEpoch, i)
 	}
 	return rewards, penalties, nil
 }
 
-func attestationDelta(pBal *Balance, sqrtActiveCurrentEpoch uint64, v *Validator, prevEpoch, finalizedEpoch primitives.Epoch) (uint64, uint64) {
+func attestationDelta(pBal *Balance, sqrtActiveCurrentEpoch uint64, v *Validator, prevEpoch, finalizedEpoch primitives.Epoch, validatorIndex int) (uint64, uint64) {
 	if !EligibleForRewards(v) || pBal.ActiveCurrentEpoch == 0 {
 		return 0, 0
 	}
@@ -107,17 +105,21 @@ func attestationDelta(pBal *Balance, sqrtActiveCurrentEpoch uint64, v *Validator
 		proposerReward := br / params.BeaconConfig().ProposerRewardQuotient
 		maxAttesterReward := br - proposerReward
 		r += maxAttesterReward / uint64(v.InclusionDistance)
+		tracer.SetReward(primitives.ValidatorIndex(validatorIndex), maxAttesterReward/uint64(v.InclusionDistance), tracer.AttestationSourceReward)
 
 		if helpers.IsInInactivityLeak(prevEpoch, finalizedEpoch) {
 			// Since full base reward will be canceled out by inactivity penalty deltas,
 			// optimal participation receives full base reward compensation here.
 			r += br
+			tracer.SetReward(primitives.ValidatorIndex(validatorIndex), br, tracer.AttestationSourceReward)
 		} else {
 			rewardNumerator := br * (pBal.PrevEpochAttested / effectiveBalanceIncrement)
 			r += rewardNumerator / currentEpochBalance
+			tracer.SetReward(primitives.ValidatorIndex(validatorIndex), rewardNumerator/currentEpochBalance, tracer.AttestationSourceReward)
 		}
 	} else {
 		p += br
+		tracer.SetPenalty(primitives.ValidatorIndex(validatorIndex), br, tracer.AttestationSourcePenalty)
 	}
 
 	// Process target reward / penalty
@@ -126,12 +128,15 @@ func attestationDelta(pBal *Balance, sqrtActiveCurrentEpoch uint64, v *Validator
 			// Since full base reward will be canceled out by inactivity penalty deltas,
 			// optimal participation receives full base reward compensation here.
 			r += br
+			tracer.SetReward(primitives.ValidatorIndex(validatorIndex), br, tracer.AttestationTargetReward)
 		} else {
 			rewardNumerator := br * (pBal.PrevEpochTargetAttested / effectiveBalanceIncrement)
 			r += rewardNumerator / currentEpochBalance
+			tracer.SetReward(primitives.ValidatorIndex(validatorIndex), rewardNumerator/currentEpochBalance, tracer.AttestationTargetReward)
 		}
 	} else {
 		p += br
+		tracer.SetPenalty(primitives.ValidatorIndex(validatorIndex), br, tracer.AttestationTargetPenalty)
 	}
 
 	// Process head reward / penalty
@@ -140,12 +145,15 @@ func attestationDelta(pBal *Balance, sqrtActiveCurrentEpoch uint64, v *Validator
 			// Since full base reward will be canceled out by inactivity penalty deltas,
 			// optimal participation receives full base reward compensation here.
 			r += br
+			tracer.SetReward(primitives.ValidatorIndex(validatorIndex), br, tracer.AttestationHeadReward)
 		} else {
 			rewardNumerator := br * (pBal.PrevEpochHeadAttested / effectiveBalanceIncrement)
 			r += rewardNumerator / currentEpochBalance
+			tracer.SetReward(primitives.ValidatorIndex(validatorIndex), rewardNumerator/currentEpochBalance, tracer.AttestationHeadReward)
 		}
 	} else {
 		p += br
+		tracer.SetPenalty(primitives.ValidatorIndex(validatorIndex), br, tracer.AttestationHeadPenalty)
 	}
 
 	// Process finality delay penalty
@@ -153,12 +161,15 @@ func attestationDelta(pBal *Balance, sqrtActiveCurrentEpoch uint64, v *Validator
 		// If validator is performing optimally, this cancels all rewards for a neutral balance.
 		proposerReward := br / params.BeaconConfig().ProposerRewardQuotient
 		p += baseRewardsPerEpoch*br - proposerReward
+		tracer.SetPenalty(primitives.ValidatorIndex(validatorIndex), baseRewardsPerEpoch*br-proposerReward, tracer.FinalityDelayPenalty)
+
 		// Apply an additional penalty to validators that did not vote on the correct target or has been slashed.
 		// Equivalent to the following condition from the spec:
 		// `index not in get_unslashed_attesting_indices(state, matching_target_attestations)`
 		if !v.IsPrevEpochTargetAttester || v.IsSlashed {
 			finalityDelay := helpers.FinalityDelay(prevEpoch, finalizedEpoch)
 			p += vb * uint64(finalityDelay) / params.BeaconConfig().InactivityPenaltyQuotient
+			tracer.SetPenalty(primitives.ValidatorIndex(validatorIndex), vb*uint64(finalityDelay)/params.BeaconConfig().InactivityPenaltyQuotient, tracer.FinalityDelayPenalty)
 		}
 	}
 	return r, p

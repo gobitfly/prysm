@@ -53,7 +53,7 @@ func ProcessSlashingsPrecompute(s state.BeaconState, pBal *Balance) error {
 			if err := helpers.DecreaseBalance(s, primitives.ValidatorIndex(idx), penalty); err != nil {
 				return false, val, err
 			}
-			tracer.SetPenalty(s, primitives.ValidatorIndex(idx), penalty, tracer.SlashingPenalty)
+			tracer.SetPenalty(primitives.ValidatorIndex(idx), penalty, tracer.SlashingPenalty)
 			return true, val, nil
 		}
 		return false, val, nil
