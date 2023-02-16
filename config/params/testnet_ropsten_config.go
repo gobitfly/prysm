@@ -1,9 +1,5 @@
 package params
 
-import (
-	eth1Params "github.com/ethereum/go-ethereum/params"
-)
-
 // UseRopstenNetworkConfig uses the Ropsten beacon chain specific network config.
 func UseRopstenNetworkConfig() {
 	cfg := BeaconNetworkConfig().Copy()
@@ -26,8 +22,8 @@ func RopstenConfig() *BeaconChainConfig {
 	cfg.ConfigName = RopstenName
 	cfg.GenesisForkVersion = []byte{0x80, 0x00, 0x00, 0x69}
 	cfg.SecondsPerETH1Block = 14
-	cfg.DepositChainID = eth1Params.RopstenChainConfig.ChainID.Uint64()
-	cfg.DepositNetworkID = eth1Params.RopstenChainConfig.ChainID.Uint64()
+	cfg.DepositChainID = 3
+	cfg.DepositNetworkID = 3
 	cfg.AltairForkEpoch = 500
 	cfg.AltairForkVersion = []byte{0x80, 0x00, 0x00, 0x70}
 	cfg.BellatrixForkEpoch = 750
